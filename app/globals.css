@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/*
+ * Tailwind v4 is CSS-first: design tokens live here in @theme, not in a
+ * tailwind.config.ts. Every token below becomes a utility automatically
+ * (e.g. --color-ink-900 -> bg-ink-900, text-ink-900, border-ink-900).
+ */
+@theme {
+  /* Surfaces — a true near-black base with four separation steps above it.
+     Steps stay close together so the UI reads as one dark sheet, not stripes. */
+  --color-ink-950: #070809;
+  --color-ink-900: #0d0f11;
+  --color-ink-850: #121518;
+  --color-ink-800: #171b1f;
+  --color-ink-700: #202429;
+  --color-ink-600: #2c3138;
+
+  /* Foreground ramp. chalk on ink-950 is 18.4:1; chalk-dim is 6.8:1 — both
+     clear AA for body text, and dim still passes for secondary labels. */
+  --color-chalk: #f2f4f5;
+  --color-chalk-dim: #9aa2ab;
+  --color-chalk-faint: #626a73;
+
+  /* Live/status semantics, kept independent of club accent so a club whose
+     colour happens to be red can't be confused with a "live" indicator. */
+  --color-live: #26d07c;
+  --color-warn: #f5a524;
+
+  --font-display: var(--font-barlow-condensed), ui-sans-serif, system-ui,
+    sans-serif;
+  --font-body: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-pill: 999px;
+}
+
+:root {
+  /* Overwritten at runtime by ClubProvider — this is the Arsenal default so
+     the first paint is already correct and there is no colour flash. */
+  --club-accent: #ef0107;
+  --club-on-accent: #ffffff;
+  /* Contrast-checked variant for chart marks; see ClubProvider. */
+  --club-chart: #ef0107;
+}
+
+@layer base {
+  html {
+    /* Prevents the layout nudging sideways when a page grows past one screen. */
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    background-color: var(--color-ink-950);
+    color: var(--color-chalk);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* One focus treatment for the whole app, tinted by the active club. */
+  :focus-visible {
+    outline: 2px solid var(--club-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Stats must never jitter as digits change during a live match. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+}
+
+@layer utilities {
+  /* The reference image's signature move: condensed, tightly-tracked,
+     all-caps display type that scales with the viewport. */
+  .display-xl {
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: clamp(2.75rem, 9vw, 8rem);
+    line-height: 0.86;
+    letter-spacing: -0.02em;
+  }
+
+  .display-md {
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    line-height: 0.92;
+    letter-spacing: -0.01em;
+  }
+
+  /* Small uppercase micro-labels that sit in the corners of the reference. */
+  .eyebrow {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--color-chalk-faint);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
