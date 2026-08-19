@@ -17,7 +17,9 @@ type ClubContextValue = {
 
 const ClubContext = createContext<ClubContextValue | null>(null);
 
-const STORAGE_KEY = "gunners-lab:club";
+// Namespaced to the package name. Renaming this resets any club a browser had
+// already stored — a one-time fallback to Arsenal, not a bug.
+const STORAGE_KEY = "soccer-lab:club";
 
 export function ClubProvider({ children }: { children: React.ReactNode }) {
   const [clubId, setClubIdState] = useState(DEFAULT_CLUB_ID);
