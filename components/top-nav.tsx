@@ -39,7 +39,7 @@ export function TopNav() {
           className="flex shrink-0 items-baseline gap-2 no-underline"
         >
           <span className="font-display text-xl font-bold uppercase tracking-tight text-chalk">
-            Gunners
+            Soccer
           </span>
           <span
             className="font-display text-xl font-bold uppercase tracking-tight"

@@ -21,7 +21,7 @@ const barlow = Barlow({
 });
 
 export const metadata: Metadata = {
-  title: "Gunners Lab — Football history, live data and simulation",
+  title: "Soccer Lab — Football history, live data and simulation",
   description:
     "Historical archives, live match data and scenario simulation for Arsenal and Europe's top five leagues.",
 };
