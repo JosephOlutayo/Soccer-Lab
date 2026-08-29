@@ -137,38 +137,48 @@ Club badges are trademarked and their files are not freely redistributable, so t
 
 ## Project structure
 
-```
-app/
-  api/
-    club-history/     Season-by-season league record
-    club-matches/     One season's fixtures for a club
-    league-baseline/  Every team's scoring record — the model's parameters
-    league-scorers/   Top scorers, split into squad and market
-    live/             In-play state, next fixtures, last result
-  page.tsx            History & Live Hub
-  simulation/         The Simulation
-  layout.tsx          Root layout, fonts, club provider
-  globals.css         Tailwind v4 theme tokens
+Data flows in one direction: `lib/` talks to the API and does the maths, `app/api/` exposes it over HTTP without leaking the key, and `components/` render it. Nothing in `components/` imports `football-data.ts` except for its types.
 
-components/
-  club-provider.tsx          Club selection context; drives the accent variables
-  club-switcher.tsx          Accessible listbox, grouped by league
-  top-nav.tsx                Wordmark, section toggle, club selector
-  live-tracker.tsx           Polling live state
-  season-timeline.tsx        Season rows, expandable into the archive
-  match-archive.tsx          Fixture list with venue and result filters
-  landmark-timeline.tsx      Curated deep history
-  simulation-lab.tsx         Dials, outcomes, and the model wiring
-  transfer-lab.tsx           Signings and departures
-  position-distribution.tsx  Finishing-position chart
+### `app/` — routing, and the only server-side code
 
-lib/
-  clubs.ts           The twelve clubs and five leagues, with API ids
-  football-data.ts   API client, caching, and failure classification
-  simulation.ts      Poisson model, Monte Carlo, transfer maths
-  landmarks.ts       Curated historical entries
-  api-failure.ts     Single failure-to-HTTP mapping
-```
+| Path | Role |
+| --- | --- |
+| `layout.tsx` | Wraps every page in `ClubProvider` and `TopNav`, and loads the two Barlow faces used across the design |
+| `page.tsx` | The History & Live Hub. Pure composition — stacks `LiveTracker`, `SeasonTimeline` and `LandmarkTimeline` into the reverse-chronological spine |
+| `simulation/page.tsx` | The Simulation. Hosts `SimulationLab`, which owns all the state that page needs |
+| `globals.css` | Tailwind v4 `@theme` tokens: the ink/chalk surface ramp, the display and body type scales, and the `--club-accent` defaults that `ClubProvider` overwrites at runtime |
+| `api/live/` | Wraps `getLiveState`. The only route with `force-dynamic` and a 30-second cache, because staleness here is visible to the user |
+| `api/club-history/` | Wraps `getClubHistory`, which walks each available season and reports restricted ones instead of hiding them |
+| `api/club-matches/` | Wraps `getClubMatches` for a single season. Kept separate from club-history so expanding a season costs exactly one upstream request, and only when opened |
+| `api/league-baseline/` | Wraps `getLeagueBaseline`. Walks back to the most recent *completed* season, since fitting a model to two matchdays would produce confident nonsense |
+| `api/league-scorers/` | Wraps `getLeagueScorers` and splits the result into the club's own players and everyone else — the two lists the Transfer Lab renders |
+
+### `components/` — all client-side
+
+| File | Role |
+| --- | --- |
+| `club-provider.tsx` | The root of club state. Persists the choice to `localStorage` and writes `--club-accent` / `--club-chart` onto `<html>`, which is how plain CSS re-themes and not just React |
+| `club-switcher.tsx` | The selector itself, built as an ARIA listbox rather than a styled `<select>` so options can carry crests and league grouping. Calls `setClubId` from the provider |
+| `club-crest.tsx` | The colour-and-code identity mark, used by both the switcher and the nav. Swap its internals for licensed art without touching a single call site |
+| `top-nav.tsx` | Wordmark, the two-section toggle driven by `usePathname`, and the mount point for `ClubSwitcher` |
+| `shell-ui.tsx` | `SectionHero`, shared by both pages, plus the placeholder panel used for unbuilt features |
+| `live-tracker.tsx` | Owns the polling loop, its visibility handling, and the in-play/idle branch. The only component that refetches on a timer |
+| `season-timeline.tsx` | Renders one row per season and turns each into a disclosure. Mounts `MatchArchive` only when a row is opened |
+| `match-archive.tsx` | A season's fixtures with venue and result filters. Fetches on mount, which is why an unopened season costs nothing |
+| `landmark-timeline.tsx` | Reads `landmarks.ts` directly — the one data surface with no API call behind it |
+| `simulation-lab.tsx` | The orchestrator. Fetches the baseline and scorer pools, holds the dials and transfer selections, runs the model, and composes the two into one attack multiplier |
+| `transfer-lab.tsx` | Renders the two player lists and reports selections upward. Deliberately owns no model state |
+| `position-distribution.tsx` | The finishing-position chart, with its hover layer and table view. Takes a plain array of probabilities, so it knows nothing about football |
+
+### `lib/` — data and maths, no React
+
+| File | Role |
+| --- | --- |
+| `clubs.ts` | The single source of truth for the twelve clubs and five leagues: identity colours, contrast-checked chart accents, and the football-data.org ids every route resolves through |
+| `football-data.ts` | The API client. Owns the key, every cache duration, and the classification of failures into `restricted` / `rate-limited` / `error`. Imports `server-only` so it can never reach the browser |
+| `api-failure.ts` | The one place a failure becomes an HTTP response, so a new route cannot reintroduce the mislabelling described above |
+| `simulation.ts` | Pure functions: `fitRatings` turns a baseline into attack/defence ratings, `simulateSeason` runs the Monte Carlo, `transferEffect` converts signings into a multiplier. No imports from React or the API client |
+| `landmarks.ts` | Curated club history as plain data, kept separate from anything fetched so the UI can label each source honestly |
 
 ---
 
